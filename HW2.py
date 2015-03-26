@@ -5,15 +5,23 @@ from __future__ import division
 from math import *
 import scipy.stats
 
-def BOPF(S, X, s, t, n, r):
-    # European Options
+def BOPF(data):
+
+    # Initial value
+    S = data['S']
+    X = data['X']
+    t = data['t']
+    n = data['n']
+    s = data['s'] / 100 # convert from percentage to decimal 
+    r = data['r'] / 100
     u = exp(s * sqrt(t / n))
-    d = 1 / u
-    #d = exp(-s * sqrt(t / n))
+    d = 1 / u   # d = exp(-s * sqrt(t / n))
     r_ = r * t / n
     R = exp(r_)
-    a = ceil(log(X / (S * (d ** n))) / log(u / d))
-    p = (R - d) / (u - d)
+    a = ceil(log(X / (S * (d ** n))) / log(u / d)) # Smallest int s.t. S(T) >= X
+    p = (R - d) / (u - d) # Risk-neutral P
+
+    # European Options
     CallSum1 = CallSum2 = 0
     PutSum1 = PutSum2 = 0
 
@@ -28,14 +36,11 @@ def BOPF(S, X, s, t, n, r):
     EuroCall = S * CallSum1 - X * exp(-r_ * n) * CallSum2
     EuroPut = X * exp(-r_ * n) * PutSum2 - S * PutSum1
 
-    print "European Call: ", EuroCall
-    print "European Put: ", EuroPut
-
     # America put
     # Initialize Value at time t
     ValueFlow = [ max(X - (S * (u ** (n-i)) * (d ** i)), 0) for i in range(n+1) ]
 
-    # Run back to time 0
+    # Run backward to time 0
     for time in reversed(range(n)):
         # Payoff of early exercise 
         EarlyExercise = [ max(X - (S * (u ** (time-i)) * (d ** i)), 0) for i in range(time+1) ]
@@ -44,8 +49,29 @@ def BOPF(S, X, s, t, n, r):
         # Find the larger value
         ValueFlow = [ max(EarlyExercise[i], ValueFlow[i]) for i in range(len(ValueFlow)) ]
 
-    print "American Call: ", EuroCall # Same as European call
-    print "American Put: ", ValueFlow[0]
+    # Output Information
+
+    outputs = [('European Call', str(EuroCall)), ('European Put', str(EuroPut)), \
+              ('American Call', str(EuroCall)), ('American Put', str(ValueFlow[0]))]
+
+    # Aligned output
+    print "S=%r, X=%r, s=%r%%, t=%r, n=%r, r=%r%%:" %(S,X,data['s'],t,n,data['r'])
+    for output in outputs:
+        print "- {item:13}: {value[0]:>4}.{value[1]:<12}".format(item=output[0], \
+              value=output[1].split('.') if '.' in output[1] else (output[1], '0'))
 
     return 
+
+import sys
+import json
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        file_location = sys.argv[1].strip()
+        with open(file_location) as data_file:
+            data = json.load(data_file)
+        for test in data:
+            BOPF(test)
+        print "~~ end ~~"
+    else:
+        print 'This requires an input file.  Please select one from the data directory. (e.g. python HW2.py ./data)'
 
