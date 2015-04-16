@@ -40,24 +40,36 @@ def BOPF(data):
     # America put
     # Initialize Value at time t
     ValueFlow = [max(X - (S * (u ** (n-i)) * (d ** i)), 0) for i in range(n+1)]
+    callValueFlow = [max((S * (u ** (n-i)) * (d ** i)) - X, 0) for i in range(n+1)]
 
     # Run backward to time 0
     for time in reversed(range(n)):
         # Payoff of early exercise
         EarlyExercise = [max(X - (S * (u ** (time-i)) * (d ** i)), 0) for
                          i in range(time+1)]
+
+        #callEarlyExercise = [max((S * (u ** (time-i)) * (d ** i)) - X, 0) for
+        #                 i in range(time+1)]
         # Continuation value
         ValueFlow = [((p * ValueFlow[i] + (1-p) * ValueFlow[i+1]) / R) for
                      i in range(time+1)]
+
+        #callValueFlow = [((p * callValueFlow[i] + (1-p) * callValueFlow[i+1]) / R) for
+        #             i in range(time+1)]
+
         # Find the larger value
         ValueFlow = [max(EarlyExercise[i], ValueFlow[i]) for
                      i in range(len(ValueFlow))]
 
+        #callValueFlow = [max(callEarlyExercise[i], callValueFlow[i]) for
+        #             i in range(len(callValueFlow))]
+
     # Output Information
 
     outputs = [('European Call', str(EuroCall)),
-               ('European Put', str(EuroPut)),
+               #('European Put', str(EuroPut)),
                ('American Call', str(EuroCall)),
+               ('American Call', str(callValueFlow[0])),
                ('American Put', str(ValueFlow[0]))]
 
     # Aligned output
