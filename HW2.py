@@ -6,6 +6,7 @@ from math import *
 import scipy.stats
 
 
+
 def BOPF(data):
 
     # Initial value
